@@ -1,0 +1,22 @@
+# `target-cpu=native` lets LLVM use the host's vector units. The `--cfg` flags
+# are separate, easy to miss, and worth far more than the optimisation level.
+#
+# RustCrypto gates its hardware backends behind crate-specific cfgs rather than
+# on target features, so a default aarch64 release build silently takes the
+# portable software path in three different places. Measured on Apple Silicon,
+# enabling them is the difference between:
+#
+#     chacha20poly1305   327 ->  573 MiB/s   (chacha20_force_neon)
+#     aes256gcm          141 -> 1912 MiB/s   (aes_armv8 + polyval_armv8)
+#     sha256             338 -> 2092 MiB/s   (`asm` feature, see Cargo.toml)
+#
+# AES-GCM needs both of its halves — the block cipher and GHASH — before it
+# reflects the hardware. Anyone comparing RustCrypto against another stack
+# without these is measuring their build configuration, not the crates.
+[build]
+rustflags = [
+    "-C", "target-cpu=native",
+    "--cfg", "aes_armv8",
+    "--cfg", "polyval_armv8",
+    "--cfg", "chacha20_force_neon",
+]

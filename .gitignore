@@ -43,3 +43,7 @@ bin/
 .DS_Store
 
 /*.hprof
+
+### polyglot benches ###
+go/crypto-bench
+rust/target/
